@@ -1,0 +1,38 @@
+#!/bin/sh
+
+if [ ! -d "/app" ]; then
+    echo "FATAL! /app folder missing.";
+    exit 1;
+fi
+
+if [ ! -f "/app/ssh/ssh_host_rsa_key" ]; then
+    ssh-keygen -A -b 4096
+    mv /etc/ssh/ssh_host* /app/ssh
+fi
+
+if [ -f "/app/conf/user.conf" ]; then
+    addgroup sftp
+    while IFS= read -r userAndPassword
+    do
+        userName=${userAndPassword%%":"*}
+        if [ ! -d $userName ]; then
+            adduser -D -s /bin/false -G sftp $userName $userName
+            
+            mkdir -p /home/$userName/data
+            chmod 750 /home/$userName/data
+            chown $userName:sftp /home/$userName/data
+
+            chmod 750 /home/$userName
+            chown root /home/$userName
+            echo "$userAndPassword" | chpasswd
+        else
+            echo "Skipped '$userName'. Already exists."
+        fi
+    done < "/app/conf/user.conf"
+    cat /dev/null > filename
+    echo "User imported. user.conf is truncated."
+fi
+
+exec /usr/sbin/sshd -f /app/ssh/sshd_config -D
+
+echo "$@"

@@ -1,0 +1,22 @@
+version: '3.2'
+
+networks:
+  devel:
+
+volumes:
+  sftp-data:
+  sftp-config:
+  sftp-ssh:
+
+services:
+  sftp:
+    image: "devtanke/sftp:latest"
+    restart: unless-stopped
+    ports:
+      - "4002:4002"
+    volumes:
+      - sftp-data:/home
+      - sftp-config:/app/conf
+      - sftp-ssh:/app/ssh
+    networks:
+      devel:
